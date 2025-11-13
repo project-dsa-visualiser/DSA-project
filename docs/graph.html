@@ -1,0 +1,979 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Graph Visualizer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+       
+        body {
+            font-family: 'Lora', Georgia, serif;
+            background-color: #e0f2f1; 
+            color: #333;
+            margin: 0;
+            padding: 0;
+            padding-bottom: 20px;
+            overflow-x: hidden; 
+        }
+
+        h1, h2, h3 {
+            color: #00796b; 
+            margin-top: 0;
+        }
+
+        button,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #80cbc4;
+            border-radius: 5px;
+            background-color: #b2dfdb; 
+            cursor: pointer;
+            
+            font-family: 'Open Sans', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-sizing: border-box; 
+        }
+
+        button {
+            background-color: #26a69a;
+            padding: 10px; 
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #00796b; 
+        }
+
+        button:disabled {
+            background-color: #b2dfdb;
+            color: #e0f2f1;
+            cursor: not-allowed;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #80cbc4;
+            border-radius: 5px;
+            background-color: #fff;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 14px;
+        }
+        
+        .playback-controls {
+            display: flex;
+            gap: 5px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 2px solid #b2dfdb;
+            margin: 20px 0;
+        }
+        
+        .toggle-switch {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .toggle-switch label {
+            font-family: 'Open Sans', sans-serif;
+            font-weight: 600;
+            color: #555;
+        }
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 50px;
+            height: 24px;
+        }
+        .switch input { 
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: #26a69a;
+        }
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+       
+        .container-grid {
+            display: grid;
+            grid-template-columns: 300px 1fr 350px;
+            grid-template-rows: [main-start] calc(100vh - 40px) [main-end];
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            min-height: 100vh;
+        }
+
+        .controls-panel,
+        .visualization-panel-wrapper, 
+        .info-panel {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            grid-row: main-start / main-end;
+        }
+
+        .visualization-panel-wrapper {
+            display: flex;
+            flex-direction: column;
+            padding: 0; 
+        }
+
+        .visualization-panel {
+            overflow: hidden;
+            padding: 10px; 
+            box-shadow: none;
+            border-radius: 0;
+            flex-grow: 1;
+            position: relative; 
+        }
+        
+        #data-structure-display {
+            flex-shrink: 0;
+            padding: 10px 20px; 
+            border-top: 2px solid #e0f2f1;
+        }
+        #data-structure-display h3 {
+            margin-bottom: 5px;
+        }
+        #data-structure-status {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #00796b;
+            word-wrap: normal; 
+            overflow-x: auto;
+            white-space: nowrap; 
+            padding-bottom: 5px;
+        }
+
+
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .status-box {
+            flex-shrink: 0;
+        }
+        .code-display {
+            background-color: #e8f5e9; 
+            border: 1px solid #b2dfdb;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            flex-shrink: 0; 
+            margin-top: 15px; 
+        }
+        .representation-box {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 0.85rem;
+            white-space: pre;
+            background: #e8f5e9;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #b2dfdb;
+            margin-top: 15px; 
+        }
+        .representation-box h3 {
+            margin-top: 0;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .code-line {
+            padding: 2px 5px;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+       
+            white-space: pre-wrap;
+            font-size: 0.9rem;
+        }
+
+        .code-line.highlight {
+            background-color: #fffde7; 
+        }
+
+        #status-log {
+            font-size: 14px;
+            color: #333;
+            height: 120px; 
+            background: #e8f5e9; 
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #b2dfdb;
+            transition: all 0.3s ease;
+            overflow-y: auto; 
+            font-family: 'Open Sans', sans-serif;
+        }
+        #status-log div {
+            padding: 2px 0;
+            border-bottom: 1px dashed #b2dfdb;
+        }
+        #status-log div:last-child {
+            border-bottom: none;
+        }
+
+        #visualization-svg {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .edge {
+            stroke: #000000;
+            stroke-width: 2;
+            transition: all 0.3s ease;
+        }
+
+        .edge.traversed {
+            stroke: #ffb74d; 
+            stroke-width: 4;
+        }
+
+        .node circle {
+            stroke: #26a69a; 
+            stroke-width: 3;
+            fill: #b2dfdb; 
+            transition: all 0.3s ease;
+        }
+
+        .node text {
+            font-size: 16px;
+            font-weight: 600;
+            fill: #222;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            user-select: none;
+            font-family: 'Open Sans', sans-serif;
+        }
+        
+        .node.visited circle {
+            fill: #fffde7; 
+            stroke: #ffd54f;
+        }
+
+        .node.current circle {
+            fill: #ffb74d;
+            stroke: #fb8c00;
+            stroke-width: 4;
+        }
+
+        .node.in-data-structure circle {
+            fill: #ffcc80; 
+            stroke: #fb8c00;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container-grid">
+        <div class="controls-panel">
+            <h2>Graph Visualizer</h2>
+            
+            <div class="control-group">
+                <button id="random-btn">New Random Graph</button>
+            </div>
+            
+            <div class="control-group toggle-switch">
+                <label for="directed-toggle">Directed Graph</label>
+                <label class="switch">
+                    <input type="checkbox" id="directed-toggle">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            
+            <div class="control-group">
+                <label for="node-count-select">Node Count:</label>
+                <select id="node-count-select">
+                    <option value="4">4 Nodes</option>
+                    <option value="5">5 Nodes</option>
+                    <option value="6" selected>6 Nodes</option>
+                    <option value="7">7 Nodes</option>
+                    <option value="8">8 Nodes</option>
+                </select>
+            </div>
+            
+            <hr>
+            
+            <div class="control-group">
+                <label for="algorithm-select">Algorithm:</label>
+                <select id="algorithm-select">
+                    <option value="bfs">BFS</option>
+                    <option value="dfs">DFS</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label for="start-node-select">Start Node:</label>
+                <select id="start-node-select"></select>
+            </div>
+            
+            <div class="control-group">
+                <button id="start-btn">Start</button>
+            </div>
+            
+            <hr>
+
+            <h3>Playback</h3>
+            <div class="control-group playback-controls">
+                <button id="play-pause-btn">Play</button>
+                <button id="step-btn">Next Step</button>
+                <button id="reset-btn">Reset</button>
+            </div>
+            <div class="control-group">
+                <label for="speed-slider">Animation Speed:</label>
+                <input type="range" id="speed-slider" min="100" max="2000" value="1000" step="100">
+            </div>
+        </div>
+        <div class="visualization-panel-wrapper">
+            <div class="visualization-panel">
+                <svg id="visualization-svg"></svg>
+            </div>
+            <div id="data-structure-display">
+                <h3 id="data-structure-title">Data Structure</h3>
+                <div id="data-structure-status">[ ]</div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="status-box">
+                <h3>Status Log</h3>
+                <div id="status-log">
+                    <div>Generated a random graph. Ready.</div>
+                </div>
+            </div>
+            <div class="code-display" id="code-display">
+                <h3 id="code-title">Pseudocode</h3>
+                
+                <div id="bfs-code" style="display: none;">
+                    <div class="code-line" id="bfs-line-1">1. <span><b>BFS</b>(graph, startNode)</span></div>
+                    <div class="code-line" id="bfs-line-2">2. &nbsp;&nbsp;<span>let queue = new Queue()</span></div>
+                    <div class="code-line" id="bfs-line-3">3. &nbsp;&nbsp;<span>let visited = new Set()</span></div>
+                    <div class="code-line" id="bfs-line-4">4. &nbsp;&nbsp;<span>queue.enqueue(startNode)</span></div>
+                    <div class="code-line" id="bfs-line-5">5. &nbsp;&nbsp;<span>visited.add(startNode)</span></div>
+                    <div class="code-line" id="bfs-line-6">6. &nbsp;&nbsp;<span>while (queue is not empty)</span></div>
+                    <div class="code-line" id="bfs-line-7">7. &nbsp;&nbsp;&nbsp;&nbsp;<span>let node = queue.dequeue()</span></div>
+                    <div class="code-line" id="bfs-line-8">8. &nbsp;&nbsp;&nbsp;&nbsp;<span>// process node</span></div>
+                    <div class="code-line" id="bfs-line-9">9. &nbsp;&nbsp;&nbsp;&nbsp;<span>for (neighbor of node.neighbors)</span></div>
+                    <div class="code-line" id="bfs-line-10">10. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>if (neighbor not in visited)</span></div>
+                    <div class="code-line" id="bfs-line-11">11. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>visited.add(neighbor)</span></div>
+                    <div class="code-line" id="bfs-line-12">12. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>queue.enqueue(neighbor)</span></div>
+                </div>
+
+                <div id="dfs-code" style="display: none;">
+                    <div class="code-line" id="dfs-line-1">1. <span><b>DFS</b>(graph, startNode)</span></div>
+                    <div class="code-line" id="dfs-line-2">2. &nbsp;&nbsp;<span>let stack = new Stack()</span></div>
+                    <div class="code-line" id="dfs-line-3">3. &nbsp;&nbsp;<span>let visited = new Set()</span></div>
+                    <div class="code-line" id="dfs-line-4">4. &nbsp;&nbsp;<span>stack.push(startNode)</span></div>
+                    <div class="code-line" id="dfs-line-5">5. &nbsp;&nbsp;<span>while (stack is not empty)</span></div>
+                    <div class="code-line" id="dfs-line-6">6. &nbsp;&nbsp;&nbsp;&nbsp;<span>let node = stack.pop()</span></div>
+                    <div class="code-line" id="dfs-line-7">7. &nbsp;&nbsp;&nbsp;&nbsp;<span>if (node not in visited)</span></div>
+                    <div class="code-line" id="dfs-line-8">8. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>visited.add(node)</span></div>
+                    <div class="code-line" id="dfs-line-9">9. &nbsp;&spp;&nbsp;&nbsp;&nbsp;<span>// process node</span></div>
+                    <div class="code-line" id="dfs-line-10">10. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>for (neighbor of node.neighbors)</span></div>
+                    <div class="code-line" id="dfs-line-11">11. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>if (neighbor not in visited)</span></div>
+                    <div class="code-line" id="dfs-line-12">12. &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span>stack.push(neighbor)</span></div>
+                </div>
+            </div>
+            
+            <div class="representation-box" id="adj-list-display-box">
+                <h3>Adjacency List</h3>
+                <div id="adj-list-display"></div>
+            </div>
+            
+            <div class="representation-box" id="adj-matrix-display-box">
+                <h3>Adjacency Matrix</h3>
+                <div id="adj-matrix-display"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const svg = document.getElementById('visualization-svg');
+            const randomBtn = document.getElementById('random-btn');
+            const directedToggle = document.getElementById('directed-toggle');
+            const nodeCountSelect = document.getElementById('node-count-select'); // NEW
+            const algorithmSelect = document.getElementById('algorithm-select');
+            const startNodeSelect = document.getElementById('start-node-select');
+            const startBtn = document.getElementById('start-btn');
+            
+            const playPauseBtn = document.getElementById('play-pause-btn');
+            const stepBtn = document.getElementById('step-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const speedSlider = document.getElementById('speed-slider');
+            
+            const statusLog = document.getElementById('status-log'); // CHANGED
+            const dataStructureTitle = document.getElementById('data-structure-title');
+            const dataStructureStatus = document.getElementById('data-structure-status');
+            const adjListDisplay = document.getElementById('adj-list-display');
+            const adjMatrixDisplay = document.getElementById('adj-matrix-display');
+            
+            const codeTitle = document.getElementById('code-title');
+            const bfsCode = document.getElementById('bfs-code');
+            const dfsCode = document.getElementById('dfs-code');
+            const allCodeLines = document.querySelectorAll('.code-line');
+            let graph = { nodes: [], edges: [] }; 
+            let adjList = new Map();
+            let isDirected = false;
+            let selectedAlgorithm = 'bfs';
+            let animationSteps = [];
+            let currentStep = 0;
+            let animationSpeed = 1000;
+            let isPlaying = false;
+            let animationInterval = null;
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+            const updateSpeed = () => { animationSpeed = 2100 - speedSlider.value; };
+
+            function setStatus(message) {
+                const logEntry = document.createElement('div');
+                logEntry.textContent = message;
+                statusLog.appendChild(logEntry);
+                statusLog.scrollTop = statusLog.scrollHeight;
+            }
+            //Clear status log
+            function clearStatus() {
+                statusLog.innerHTML = '';
+            }
+
+            function clearHighlights() {
+                allCodeLines.forEach(line => line.classList.remove('highlight'));
+            }
+            
+
+            function generateRandomGraph() {
+                graph = { nodes: [], edges: [] };
+                
+                const numNodes = parseInt(nodeCountSelect.value, 10);
+                const nodeIds = Array.from({ length: numNodes }, (_, i) => String.fromCharCode(65 + i));
+                
+                const svgPanel = document.querySelector('.visualization-panel');
+                if (!svgPanel) return; 
+                const SVG_WIDTH = svgPanel.clientWidth;
+                const SVG_HEIGHT = svgPanel.clientHeight;
+                
+                const MIN_DISTANCE = 100;
+                const MARGIN = 40;
+                let tries = 0;
+                for (const id of nodeIds) {
+                    let placed = false;
+                    let x, y;
+                    
+                    for (let i = 0; i < 100; i++) {
+                        x = Math.random() * (SVG_WIDTH - MARGIN * 2) + MARGIN;
+                        y = Math.random() * (SVG_HEIGHT - MARGIN * 2) + MARGIN;
+                        
+                        let tooClose = false;
+                        for (const node of graph.nodes) {
+                            const dist = Math.sqrt(Math.pow(node.x - x, 2) + Math.pow(node.y - y, 2));
+                            if (dist < MIN_DISTANCE) {
+                                tooClose = true;
+                                break;
+                            }
+                        }
+                        
+                        if (!tooClose) {
+                            placed = true;
+                            break;
+                        }
+                    }
+                    
+                    
+                    graph.nodes.push({ id, x: x || 50, y: y || 50 }); //50,50fall
+                }
+
+                
+                for (let i = 0; i < numNodes; i++) {
+                    for (let j = i + 1; j < numNodes; j++) {
+                        if (Math.random() > 0.5) { //50percent chance of edges
+                            graph.edges.push({
+                                source: nodeIds[i],
+                                target: nodeIds[j],
+                            });
+                        }
+                    }
+                }
+                if (graph.edges.length === 0 && numNodes > 1) { //one node is more than 1
+                    graph.edges.push({
+                        source: nodeIds[0],
+                        target: nodeIds[1],
+                    });
+                }
+
+                buildAdjList();
+                drawGraph();
+                updateNodeSelects();
+                displayGraphRepresentations();
+                resetAnimation(false); 
+                clearStatus(); //statuslog is clearedd
+                setStatus(`New ${numNodes}-node graph generated. Ready.`);
+            }
+            
+            function buildAdjList() {
+                adjList.clear();
+                for (const node of graph.nodes) {
+                    adjList.set(node.id, []);
+                }
+                for (const edge of graph.edges) {
+                    if(adjList.has(edge.source)) {
+                        adjList.get(edge.source).push(edge.target);
+                    }
+                    if (!isDirected) {
+                         if(adjList.has(edge.target)) {
+                            adjList.get(edge.target).push(edge.source);
+                         }
+                    }
+                }
+            }
+
+            function updateNodeSelects() {
+                startNodeSelect.innerHTML = '';
+                const sortedNodes = [...graph.nodes].sort((a,b) => a.id.localeCompare(b.id));
+                for (const node of sortedNodes) {
+                    const option1 = document.createElement('option');
+                    option1.value = node.id;
+                    option1.textContent = node.id;
+                    startNodeSelect.appendChild(option1);
+                }
+            }
+            
+            function displayGraphRepresentations() {
+                
+                let listString = "";
+                const sortedNodes = [...adjList.keys()].sort();
+                for (const nodeId of sortedNodes) {
+                    listString += `${nodeId}: `;
+                    const neighbors = adjList.get(nodeId) || []; //safety fallback
+                    if (neighbors.length === 0) {
+                        listString += "null\n";
+                    } else {
+                        listString += neighbors.sort().join(', ') + '\n';
+                    }
+                }
+                adjListDisplay.textContent = listString;
+                let matrixString = "  ";
+                const nodeIds = graph.nodes.map(n => n.id).sort();
+                const nodeIndex = new Map(nodeIds.map((id, i) => [id, i]));
+                
+                matrixString += nodeIds.join(' ') + '\n';
+                
+                for (const nodeId of nodeIds) {
+                    matrixString += `${nodeId} `;
+                    const row = new Array(nodeIds.length).fill(0);
+                    const neighbors = adjList.get(nodeId);
+                    if (neighbors) {
+                        for (const n of neighbors) {
+                            if(nodeIndex.has(n)) { 
+                                row[nodeIndex.get(n)] = 1;
+                            }
+                        }
+                    }
+                    matrixString += row.join(' ') + '\n';
+                }
+                adjMatrixDisplay.textContent = matrixString;
+            }
+
+            function drawGraph() {
+                svg.innerHTML = ''; 
+                
+                const svgPanel = document.querySelector('.visualization-panel');
+                if (!svgPanel) return;
+                const SVG_WIDTH = svgPanel.clientWidth;
+                const SVG_HEIGHT = svgPanel.clientHeight;
+                if(SVG_WIDTH === 0 || SVG_HEIGHT === 0) return; 
+                
+                svg.setAttribute("viewBox", `0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`);
+                
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                if (isDirected) {
+                    defs.innerHTML = `
+                        <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                        refX="9" refY="3.5" orient="auto">
+                            <polygon points="0 0, 10 3.5, 0 7" fill="#000000" />
+                        </marker>
+                    `;
+                }
+                svg.appendChild(defs);
+                const edgeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                const nodeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                graph.edges.forEach(edge => {
+                    const sourceNode = graph.nodes.find(n => n.id === edge.source);
+                    const targetNode = graph.nodes.find(n => n.id === edge.target);
+                    
+                    if (!sourceNode || !targetNode) return; 
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    
+                    let x1 = sourceNode.x;
+                    let y1 = sourceNode.y;
+                    let x2 = targetNode.x;
+                    let y2 = targetNode.y;
+
+                    if (isDirected) {
+                        const dx = x2 - x1;
+                        const dy = y2 - y1;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (dist > 0) { //undefined div with 0
+                            const ratio = (dist - 23) / dist; //20+3(radius+strk)
+                            x2 = x1 + dx * ratio;
+                            y2 = y1 + dy * ratio;
+                        }
+                    }
+
+                    line.setAttribute('x1', x1);
+                    line.setAttribute('y1', y1);
+                    line.setAttribute('x2', x2);
+                    line.setAttribute('y2', y2);
+                    line.setAttribute('class', 'edge');
+                    line.setAttribute('id', `edge-${edge.source}-${edge.target}`);
+                    if (isDirected) {
+                        line.setAttribute('marker-end', 'url(#arrowhead)');
+                    }
+                    edgeGroup.appendChild(line);
+                });
+
+                graph.nodes.forEach(node => {
+                    const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                    g.setAttribute('class', 'node');
+                    g.setAttribute('id', `node-${node.id}`);
+
+                    const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                    circle.setAttribute('cx', node.x);
+                    circle.setAttribute('cy', node.y);
+                    circle.setAttribute('r', 20);
+                    
+                    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                    text.setAttribute('x', node.x);
+                    text.setAttribute('y', node.y);
+                    text.textContent = node.id;
+                    
+                    g.appendChild(circle);
+                    g.appendChild(text);
+                    nodeGroup.appendChild(g);
+                });
+                
+                svg.appendChild(edgeGroup);
+                svg.appendChild(nodeGroup);
+            }
+            
+            function updatePseudocodeDisplay(algorithm) {
+                selectedAlgorithm = algorithm;
+                bfsCode.style.display = 'none';
+                dfsCode.style.display = 'none';
+
+                if (selectedAlgorithm === 'bfs') {
+                    bfsCode.style.display = 'block';
+                    codeTitle.textContent = 'BFS Pseudocode';
+                    dataStructureTitle.textContent = 'Queue';
+                } else if (selectedAlgorithm === 'dfs') {
+                    dfsCode.style.display = 'block';
+                    codeTitle.textContent = 'DFS Pseudocode';
+                    dataStructureTitle.textContent = 'Stack';
+                }
+            }
+
+            function createStep(message, codeLine, visualState) {
+                return { message, codeLine, visualState };
+            }
+
+            function generateBfsSteps(startNodeId) {
+                let steps = [];
+                let queue = [startNodeId];
+                let visited = new Set();
+
+                steps.push(createStep('Starting BFS.', 'bfs-line-1', {}));
+                steps.push(createStep('Creating Queue.', 'bfs-line-2', {}));
+                steps.push(createStep('Creating Visited Set.', 'bfs-line-3', {}));
+                
+                steps.push(createStep(`Enqueue start node ${startNodeId}.`, 'bfs-line-4', { ds: [...queue] }));
+                visited.add(startNodeId);
+                steps.push(createStep(`Mark ${startNodeId} as visited.`, 'bfs-line-5', { visited: new Set(visited), inDS: startNodeId }));
+                
+                steps.push(createStep('While queue is not empty...', 'bfs-line-6', {}));
+                
+                while (queue.length > 0) {
+                    let nodeId = queue.shift();
+                    steps.push(createStep(`Dequeue ${nodeId}.`, 'bfs-line-7', { current: nodeId, ds: [...queue] }));
+                    steps.push(createStep(`Processing ${nodeId}...`, 'bfs-line-8', {}));
+                    
+                    steps.push(createStep(`Checking neighbors of ${nodeId}...`, 'bfs-line-9', {}));
+                    const neighbors = (adjList.get(nodeId) || []).sort();
+                    
+                    for (const neighbor of neighbors) {
+                        steps.push(createStep(`Checking neighbor ${neighbor}...`, 'bfs-line-10', { edge: [nodeId, neighbor] }));
+                        if (!visited.has(neighbor)) {
+                            visited.add(neighbor);
+                            steps.push(createStep(`Mark ${neighbor} as visited.`, 'bfs-line-11', { visited: new Set(visited) }));
+                            queue.push(neighbor);
+                            steps.push(createStep(`Enqueue ${neighbor}.`, 'bfs-line-12', { ds: [...queue], inDS: neighbor }));
+                        } else {
+                            steps.push(createStep(`Neighbor ${neighbor} already visited.`, 'bfs-line-10', {}));
+                        }
+                    }
+                }
+                steps.push(createStep('Queue is empty. BFS complete.', 'bfs-line-6', {}));
+                return steps;
+            }
+            
+            function generateDfsSteps(startNodeId) {
+                let steps = [];
+                let stack = [startNodeId];
+                let visited = new Set();
+                
+                steps.push(createStep('Starting DFS.', 'dfs-line-1', {}));
+                steps.push(createStep('Creating Stack.', 'dfs-line-2', {}));
+                steps.push(createStep('Creating Visited Set.', 'dfs-line-3', {}));
+                
+                steps.push(createStep(`Push start node ${startNodeId}.`, 'dfs-line-4', { ds: [...stack], inDS: startNodeId }));
+                
+                steps.push(createStep('While stack is not empty...', 'dfs-line-5', {}));
+                
+                while (stack.length > 0) {
+                    let nodeId = stack.pop();
+                    steps.push(createStep(`Pop ${nodeId}.`, 'dfs-line-6', { ds: [...stack] }));
+
+                    steps.push(createStep(`Checking if ${nodeId} is visited...`, 'dfs-line-7', { current: nodeId }));
+                    if (!visited.has(nodeId)) {
+                        visited.add(nodeId);
+                        steps.push(createStep(`Mark ${nodeId} as visited.`, 'dfs-line-8', { visited: new Set(visited) }));
+                        steps.push(createStep(`Processing ${nodeId}...`, 'dfs-line-9', {}));
+                        
+                        steps.push(createStep(`Checking neighbors of ${nodeId}...`, 'dfs-line-10', {}));
+                        const neighbors = (adjList.get(nodeId) || []).sort().reverse();
+
+                        for (const neighbor of neighbors) {
+                            steps.push(createStep(`Checking neighbor ${neighbor}...`, 'dfs-line-11', { edge: [nodeId, neighbor] }));
+                            if (!visited.has(neighbor)) {
+                                stack.push(neighbor);
+                                steps.push(createStep(`Push ${neighbor} to stack.`, 'dfs-line-12', { ds: [...stack], inDS: neighbor }));
+                            }
+                        }
+                    } else {
+                        steps.push(createStep(`Node ${nodeId} already visited.`, 'dfs-line-7', {}));
+                    }
+                }
+                steps.push(createStep('Stack is empty. DFS complete.', 'dfs-line-5', {}));
+                return steps;
+            }
+            function play() {
+                if (isPlaying || currentStep >= animationSteps.length) return;
+                isPlaying = true;
+                playPauseBtn.textContent = 'Pause';
+                playPauseBtn.classList.add('playing');
+                
+                animationInterval = setInterval(() => {
+                    executeStep();
+                    if (currentStep >= animationSteps.length) {
+                        pause();
+                    }
+                }, animationSpeed);
+            }
+
+            function pause() {
+                isPlaying = false;
+                playPauseBtn.textContent = 'Play';
+                playPauseBtn.classList.remove('playing');
+                clearInterval(animationInterval);
+                animationInterval = null;
+            }
+            
+            function playPause() {
+                if (isPlaying) pause();
+                else play();
+            }
+
+            function stepForward() {
+                if (currentStep < animationSteps.length) {
+                    pause();
+                    executeStep();
+                }
+            }
+
+            function executeStep() {
+                if (currentStep >= animationSteps.length) {
+                    pause();
+                    return;
+                }
+                const step = animationSteps[currentStep];
+                renderStep(step);
+                currentStep++;
+            }
+
+            function resetAnimation(clearLog = true) {
+                pause();
+                animationSteps = [];
+                currentStep = 0;
+                resetVisualState();
+                setControlsDisabled(false);
+                if (clearLog) {
+                    clearStatus();
+                    setStatus('Ready.');
+                }
+                dataStructureStatus.textContent = '[ ]';
+                updatePseudocodeDisplay(selectedAlgorithm); 
+            }
+            
+            function resetVisualState() {
+                document.querySelectorAll('.node').forEach(n => n.classList.remove('current', 'visited', 'in-data-structure'));
+                document.querySelectorAll('.edge').forEach(e => e.classList.remove('traversed'));
+                clearHighlights();
+            }
+
+            function renderStep(step) {
+                const { message, codeLine, visualState } = step;
+
+                setStatus(message);
+                
+                clearHighlights();
+                if (codeLine) {
+                    const el = document.getElementById(codeLine);
+                    if (el) el.classList.add('highlight');
+                }
+
+                document.querySelectorAll('.node.current').forEach(n => n.classList.remove('current'));
+                document.querySelectorAll('.edge.traversed').forEach(e => e.classList.remove('traversed'));
+                document.querySelectorAll('.node.in-data-structure').forEach(n => n.classList.remove('in-data-structure'));
+
+                if (visualState.ds) dataStructureStatus.textContent = `[ ${visualState.ds.join(', ')} ]`;
+                
+                if (visualState.current) {
+                    const el = document.getElementById(`node-${visualState.current}`);
+                    if (el) el.classList.add('current');
+                }
+                if (visualState.inDS) {
+                    const el = document.getElementById(`node-${visualState.inDS}`);
+                    if (el) el.classList.add('in-data-structure');
+                }
+                
+                if (visualState.visited) {
+                    visualState.visited.forEach(nodeId => {
+                        const el = document.getElementById(`node-${nodeId}`);
+                        if (el) el.classList.add('visited');
+                    });
+                }
+                
+                if (visualState.edge) {
+                    const [u, v] = visualState.edge;
+                    let edgeEl = document.getElementById(`edge-${u}-${v}`) || (isDirected ? null : document.getElementById(`edge-${v}-${u}`));
+                    if (edgeEl) edgeEl.classList.add('traversed');
+                }
+            }
+
+            function setControlsDisabled(disabled) {
+                isAnimating = disabled;
+                startBtn.disabled = disabled;
+                randomBtn.disabled = disabled;
+                directedToggle.disabled = disabled;
+                nodeCountSelect.disabled = disabled;
+                algorithmSelect.disabled = disabled;
+                startNodeSelect.disabled = disabled;
+            }
+
+            startBtn.addEventListener('click', () => {
+                if (isAnimating) return;
+                
+                const startNodeId = startNodeSelect.value;
+                if (!startNodeId) {
+                    setStatus('Error: No start node selected.');
+                    return;
+                }
+
+                setControlsDisabled(true);
+                resetVisualState();
+                clearStatus(); 
+                
+                selectedAlgorithm = algorithmSelect.value;
+                updatePseudocodeDisplay(selectedAlgorithm); 
+                
+                if (selectedAlgorithm === 'bfs') {
+                    animationSteps = generateBfsSteps(startNodeId);
+                } else if (selectedAlgorithm === 'dfs') {
+                    animationSteps = generateDfsSteps(startNodeId);
+                }
+                
+                currentStep = 0;
+                play();
+            });
+
+            randomBtn.addEventListener('click', generateRandomGraph);
+            nodeCountSelect.addEventListener('change', generateRandomGraph); 
+            
+            directedToggle.addEventListener('change', (e) => {
+                isDirected = e.target.checked;
+                buildAdjList();
+                drawGraph();
+                displayGraphRepresentations();
+                resetAnimation(true); 
+                setStatus(`Graph set to ${isDirected ? 'Directed' : 'Undirected'}.`);
+            });
+            
+            algorithmSelect.addEventListener('change', (e) => {
+                 selectedAlgorithm = e.target.value;
+                 updatePseudocodeDisplay(selectedAlgorithm);
+                 dataStructureStatus.textContent = '[ ]'; 
+            });
+            
+            playPauseBtn.addEventListener('click', playPause);
+            stepBtn.addEventListener('click', stepForward);
+            resetBtn.addEventListener('click', () => resetAnimation(true)); 
+            speedSlider.addEventListener('input', updateSpeed);
+            updateSpeed();
+            generateRandomGraph(); 
+            updatePseudocodeDisplay(selectedAlgorithm); 
+        });
+    </script>
+</body>
+</html>

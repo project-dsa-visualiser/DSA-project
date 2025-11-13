@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Linked List Visualizer</title>
+<style>
+  html, body { margin:0; padding:0; height:100%; width:100%; font-family:'Poppins',sans-serif; background:#f7f9fb; }
+  body { display:flex; flex-direction:column; overflow:hidden; color:#333; }
+  h1 { color:#6b7fd7; text-align:center; margin:10px 0; }
+  .container { display:flex; flex:1; gap:20px; padding:10px; width:100%; box-sizing:border-box; }
+  .controls, .pseudocode { flex:1; background:#fff; border-radius:12px; padding:20px; box-shadow:0 2px 8px rgba(0,0,0,0.1); overflow-y:auto; max-height:100%; }
+  .visualizer { flex:2; background:#e9eef6; border-radius:12px; padding:20px; display:flex; justify-content:flex-start; align-items:center; overflow-x:auto; overflow-y:hidden; min-height:100%; position:relative; }
+  .nodes-wrapper { display:flex; align-items:center; position:relative; transition:all 0.5s ease; }
+  .node { background:#a8c7fa; border:2px solid #6b7fd7; border-radius:8px; padding:4px 8px; margin:12px; font-size:20px; display:inline-flex; align-items:center; justify-content:center; position:relative; transition:all 0.5s ease; opacity:1; }
+  .node.highlight { transform:scale(1.4); background:#ffe066; border-color:#f08a5d; }
+  .label { position:absolute; top:-28px; font-size:14px; color:#555; }
+  .arrow { width:40px; height:3px; background:#6b7fd7; margin:0 12px; position:relative; }
+  .arrow::after { content:''; position:absolute; right:0; top:-6px; border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:10px solid #6b7fd7; }
+  .double-arrow { display:flex; flex-direction:column; align-items:center; margin:0 12px; }
+  .double-arrow .line { width:40px; height:3px; background:#6b7fd7; margin:4px 0; position:relative; }
+  .double-arrow .line:first-child::before { content:''; position:absolute; left:0; top:-6px; border-top:6px solid transparent; border-bottom:6px solid transparent; border-right:10px solid #6b7fd7; }
+  .double-arrow .line:last-child::after { content:''; position:absolute; right:0; top:-6px; border-top:6px solid transparent; border-bottom:6px solid transparent; border-left:10px solid #6b7fd7; }
+  svg.circular-connector { position:absolute; left:0; width:100%; height:150px; pointer-events:none; overflow:visible; }
+  select, input, button { margin:6px 0; padding:10px 12px; border-radius:6px; border:1px solid #ccc; font-size:16px; }
+  button { cursor:pointer; background:#6b7fd7; color:white; border:none; transition:background 0.2s ease; }
+  button:hover { background:#5063c9; }
+  pre { background:#f0f2fa; border-radius:10px; padding:10px; font-size:14px; overflow-x:auto; }
+</style>
+</head>
+<body>
+<h1>Linked List Visualizer</h1>
+<div class="container">
+  <div class="controls">
+    <h3>Controls</h3>
+    <label>List Type:</label>
+    <select id="listType">
+      <option value="singly">Singly</option>
+      <option value="doubly">Doubly</option>
+      <option value="circular">Circular</option>
+    </select>
+    <br>
+    <label>Random List Size:</label>
+    <input type="number" id="listSize" placeholder="Enter size" value="5" min="1" max="50">
+    <button id="randomBtn">Generate Random List</button>
+    <br>
+    <label>Insert / Delete Value:</label>
+    <input type="number" id="valInput" placeholder="Enter value">
+    <button id="insertBtn">Insert</button>
+    <button id="deleteBtn">Delete</button>
+    <br>
+    <button id="resetBtn">Reset</button>
+  </div>
+
+  <div class="visualizer" id="visualizer"></div>
+
+  <div class="pseudocode">
+    <h3>Pseudocode</h3>
+    <pre id="pseudocodeText">Select an operation to view pseudocode.</pre>
+  </div>
+</div>
+
+<script>
+const vis = document.getElementById('visualizer');
+const pseudocode = document.getElementById('pseudocodeText');
+const listTypeSel = document.getElementById('listType');
+const sizeInput = document.getElementById('listSize');
+let list = [];
+
+function renderList(highlightNode=null, removedNode=null){
+  vis.innerHTML='';
+  if(list.length===0){vis.innerHTML='<p>No nodes</p>';return;}
+  const wrapper=document.createElement('div');
+  wrapper.className='nodes-wrapper';
+  wrapper.style.minWidth=Math.max(list.length*160,300)+'px';
+  const type=listTypeSel.value;
+
+  list.forEach((val,idx)=>{
+    const node=document.createElement('div');
+    node.className='node';
+    node.textContent=val;
+    if(highlightNode===idx)node.classList.add('highlight');
+    if(removedNode===idx)node.style.opacity=0;
+
+    if(idx===0){ const headLabel=document.createElement('div'); headLabel.className='label'; headLabel.textContent='head'; node.appendChild(headLabel);}
+    if(idx===list.length-1){ const tailLabel=document.createElement('div'); tailLabel.className='label'; tailLabel.textContent='tail'; node.appendChild(tailLabel);}
+    wrapper.appendChild(node);
+
+    if(idx!==list.length-1){
+      if(type==='singly'||type==='circular'){ const arrow=document.createElement('div'); arrow.className='arrow'; wrapper.appendChild(arrow);}
+      else if(type==='doubly'){ const doubleArrow=document.createElement('div'); doubleArrow.className='double-arrow'; doubleArrow.innerHTML='<div class="line"></div><div class="line"></div>'; wrapper.appendChild(doubleArrow);}
+    }
+  });
+
+  const inner=document.createElement('div'); inner.style.position='relative'; inner.style.width='100%'; inner.appendChild(wrapper); vis.appendChild(inner);
+
+  if(type==='circular'&&list.length>1){
+  const nodes=wrapper.querySelectorAll('.node');
+  const first=nodes[0].getBoundingClientRect();
+  const last=nodes[nodes.length-1].getBoundingClientRect();
+  const visRect=vis.getBoundingClientRect();
+  const svg=document.createElementNS('http://www.w3.org/2000/svg','svg');
+  svg.classList.add('circular-connector');
+  svg.setAttribute('width',vis.clientWidth);
+  svg.setAttribute('height',200);
+  svg.setAttribute('viewBox',`0 0 ${vis.clientWidth} 200`);
+
+  const defs=document.createElementNS('http://www.w3.org/2000/svg','defs');
+  const marker=document.createElementNS('http://www.w3.org/2000/svg','marker');
+  marker.setAttribute('id','arrowhead'); marker.setAttribute('markerWidth','10'); marker.setAttribute('markerHeight','7'); marker.setAttribute('refX','10'); marker.setAttribute('refY','3.5'); marker.setAttribute('orient','auto');
+  const arrowPath=document.createElementNS('http://www.w3.org/2000/svg','path'); arrowPath.setAttribute('d','M0,0 L10,3.5 L0,7 z'); arrowPath.setAttribute('fill','#3b82f6');
+  marker.appendChild(arrowPath); defs.appendChild(marker); svg.appendChild(defs);
+
+  const startX = last.left - visRect.left + 50;
+  const endX = first.left - visRect.left - 50;
+
+
+  let maxTop = Math.min(...Array.from(nodes).map(n=>n.getBoundingClientRect().top));
+  const startY = maxTop - visRect.top - 130;
+  const endY = startY;
+  const controlX = (startX + endX)/2;
+  const controlY = startY + 200;
+
+  const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+  path.setAttribute('d',`M ${startX} ${startY} Q ${controlX} ${controlY} ${endX} ${endY}`);
+  path.setAttribute('stroke','#3b82f6'); path.setAttribute('fill','none'); path.setAttribute('stroke-width','3'); path.setAttribute('marker-end','url(#arrowhead)');
+  svg.appendChild(path);
+  vis.appendChild(svg);
+}
+
+
+  setTimeout(()=>{vis.scrollLeft=wrapper.scrollWidth;},50);
+}
+
+function animateInsert(val){
+  list.push(val);
+  let i=0;
+  const interval=setInterval(()=>{
+    renderList(i);
+    i++;
+    if(i>=list.length) clearInterval(interval);
+  },300);
+  pseudocode.textContent=
+`Insert Operation:
+1. Create newNode(value)
+2. If list is empty, head = newNode
+3. Else, traverse to last node
+4. Update last.next (and last.prev if doubly)
+5. Append newNode
+6. Update tail pointer`;
+}
+
+function animateDelete(val){
+  const idx=list.indexOf(val); if(idx===-1) return;
+  renderList(null,idx);
+  setTimeout(()=>{list.splice(idx,1); renderList();},400);
+  pseudocode.textContent=
+`Delete Operation:
+1. Traverse to node with value
+2. Update previous node's next to skip this node
+3. Update next node's prev (if doubly)
+4. If node is head/tail, update pointers
+5. Remove node`;
+}
+
+function randomList(){
+  const size=parseInt(sizeInput.value)||5;
+  list=Array.from({length:size},()=>Math.floor(Math.random()*90+10));
+  renderList();
+  pseudocode.textContent=
+`Random List Generation:
+1. Initialize empty list
+2. Generate 'size' random values
+3. Append each value to list
+4. Update head and tail pointers
+5. Render list`;
+}
+
+function resetList(){list=[];renderList();pseudocode.textContent='List reset.';}
+
+document.getElementById('randomBtn').onclick=randomList;
+document.getElementById('insertBtn').onclick=()=>{ const val=parseInt(document.getElementById('valInput').value); if(!isNaN(val)) animateInsert(val); };
+document.getElementById('deleteBtn').onclick=()=>{ const val=parseInt(document.getElementById('valInput').value); if(!isNaN(val)) animateDelete(val); };
+document.getElementById('resetBtn').onclick=resetList;
+
+renderList();
+</script>
+</body>
+</html>

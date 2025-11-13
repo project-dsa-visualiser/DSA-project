@@ -1,0 +1,648 @@
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Queue Visualizer</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com"> 
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400..700;1,400..700&family=Open+Sans:wght@400;600&display=swap" rel="stylesheet">
+    
+    <style>
+       
+        body {
+            font-family: 'Lora', Georgia, serif;
+            background-color: #e0f2f1; 
+            color: #333;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        h1, h2, h3 {
+            color: #00796b; 
+            margin-top: 0;
+        }
+
+        button,
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #80cbc4; 
+            border-radius: 5px;
+            background-color: #b2dfdb; 
+            cursor: pointer;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 14px;
+            transition: all 0.2s ease;
+            box-sizing: border-box; 
+        }
+
+        button {
+            background-color: #26a69a; 
+            color: white;
+            font-weight: 600;
+            border: none;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #00796b;
+        }
+
+        button:disabled {
+            background-color: #b2dfdb;
+            color: #e0f2f1;
+            cursor: not-allowed;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #80cbc4;
+            border-radius: 5px;
+            background-color: #fff;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+            font-size: 14px;
+        }
+
+        hr {
+            border: 0;
+            border-top: 2px solid #b2dfdb;
+            margin: 20px 0;
+        }
+
+       
+        .container-grid {
+            display: grid;
+            grid-template-columns: 280px 1fr 350px;
+            grid-template-rows: 100vh;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+            height: 100vh;
+        }
+
+        .controls-panel,
+        .visualization-panel,
+        .info-panel {
+            background-color: #ffffff;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+
+        .visualization-panel {
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        .info-panel {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .status-box {
+            flex-shrink: 0;
+        }
+
+        .code-display {
+            background-color: #e8f5e9; 
+            border: 1px solid #b2dfdb;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: 'Courier New', Courier, monospace;
+            flex-shrink: 0; 
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .code-line {
+            padding: 2px 5px;
+            border-radius: 3px;
+            transition: background-color 0.2s ease;
+            white-space: pre;
+            font-size: 0.9rem;
+        }
+
+        .code-line.highlight {
+            background-color: #fffde7; 
+        }
+
+        #status-message {
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 10px;
+            min-height: 30px;
+            background: #e8f5e9; 
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #b2dfdb;
+            transition: all 0.3s ease;
+        }
+
+        #queue-array-status {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 16px;
+            font-weight: 600;
+            color: #00796b;
+            word-wrap: break-word;
+            min-height: 20px;
+        }
+
+
+        #queue-container {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start; 
+            background: #e8f5e9; 
+            border: 2px dashed #80cbc4;
+            border-radius: 10px;
+            width: 100%;
+            max-width: 800px;
+            min-height: 100px;
+            position: relative;
+            box-sizing: border-box;
+            transition: all 0.3s ease;
+            padding: 50px 10px; 
+            overflow-x: auto;
+            overflow-y: hidden; 
+        }
+        .pointer {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #00796b; 
+            opacity: 0;
+            transition: all 0.5s ease;
+            position: absolute;
+            left: 0;
+            width: 60px; 
+            text-align: center;
+        }
+
+        .pointer span {
+            display: block;
+            margin-top: -5px; 
+        }
+        #front-pointer {
+            top: 5px; 
+        }
+        #rear-pointer {
+            bottom: 5px; 
+        }
+
+        .queue-item {
+            width: 60px;
+            height: 60px;
+            background-color: #b2dfdb; 
+            border: 2px solid #26a69a; 
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            margin: 0 5px;
+            flex-shrink: 0; 
+            transition: all 0.5s ease, opacity 0.5s ease, transform 0.5s ease;
+        }
+
+        .queue-item.new-item {
+            opacity: 0;
+            transform: scale(0.3);
+        }
+
+        .queue-item.removing-item {
+            opacity: 0;
+            transform: translateY(-50px) scale(0.5);
+            background-color: #ffb74d; 
+            border-color: #fb8c00;
+        }
+        
+        .queue-item.peek-item {
+            transform: scale(1.1) translateY(-10px);
+            background-color: #fffde7; 
+            border-color: #ffb74d;
+        }
+    </style>
+</head>
+<body>
+    <div class="container-grid">
+        <div class="controls-panel">
+            <h2>Queue Visualizer</h2>
+            
+            <div class="control-group">
+                <label for="enqueue-value">Value:</label>
+                <input type="text" id="enqueue-value" placeholder="e.g., 5 or 'A'">
+            </div>
+            <div class="control-group">
+                <button id="enqueue-btn">Enqueue(value)</button>
+            </div>
+            <div class="control-group">
+                <button id="random-enqueue-btn">Random Enqueue()</button>
+            </div>
+            <div class="control-group">
+                <button id="dequeue-btn">Dequeue()</button>
+            </div>
+            <div class="control-group">
+                <button id="peek-btn">Peek()</button>
+            </div>
+            <div class="control-group">
+                <button id="get-size-btn">Get Size()</button>
+            </div>
+            
+            <hr>
+            
+            <div class="control-group">
+                <button id="reset-btn">Reset Queue</button>
+            </div>
+            
+            <hr>
+
+            <h3>Settings</h3>
+            <div class="control-group">
+                <label for="speed-slider">Animation Speed:</label>
+                <input type="range" id="speed-slider" min="100" max="2000" value="1000" step="100">
+            </div>
+             <div class="control-group">
+                <label for="max-size-select">Max Queue Size (for Overflow):</label>
+                <select id="max-size-select">
+                    <option value="5">5</option>
+                    <option value="8" selected>8</option>
+                    <option value="12">12</option>
+                    <option value="99">No Limit (for Scroll Test)</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="visualization-panel">
+            <div id="queue-container">
+                <div class="pointer" id="front-pointer">Front <span>&darr;</span></div>
+                <div class="pointer" id="rear-pointer">Rear <span>&uarr;</span></div>
+            </div>
+        </div>
+
+        <div class="info-panel">
+            <div class="status-box">
+                <h3>Status</h3>
+                <div id="status-message">Queue is empty.</div>
+                
+                <h3>Queue (Internal Array)</h3>
+                <div id="queue-array-status">[ ]</div>
+            </div>
+
+            <div class="code-display" id="code-display">
+                <h3 id="code-title">Pseudocode</h3>
+                
+                <div id="enqueue-code">
+                    <div class="code-line" id="enq-line-1">1. <span><b>Enqueue(value):</b></span></div>
+                    <div class="code-line" id="enq-line-2">2. &nbsp;&nbsp;<span>if queue is full:</span></div>
+                    <div class="code-line" id="enq-line-3">3. &nbsp;&nbsp;&nbsp;&nbsp;<span>report <b>Overflow</b> error</span></div>
+                    <div class="code-line" id="enq-line-4">4. &nbsp;&nbsp;<span>else:</span></div>
+                    <div class="code-line" id="enq-line-5">5. &nbsp;&nbsp;&nbsp;&nbsp;<span>add value to <b>rear</b> of queue</span></div>
+                    <div class="code-line" id="enq-line-6">6. &nbsp;&nbsp;&nbsp;&nbsp;<span>update <b>rear</b> pointer</span></div>
+                </div>
+
+                <div id="dequeue-code" style="display: none;">
+                    <div class="code-line" id="deq-line-1">1. <span><b>Dequeue():</b></span></div>
+                    <div class="code-line" id="deq-line-2">2. &nbsp;&nbsp;<span>if queue is empty:</span></div>
+                    <div class="code-line" id="deq-line-3">3. &nbsp;&nbsp;&nbsp;&nbsp;<span>report <b>Underflow</b> error</span></div>
+                    <div class="code-line" id="deq-line-4">4. &nbsp;&nbsp;<span>else:</span></div>
+                    <div class="code-line" id="deq-line-5">5. &nbsp;&nbsp;&nbsp;&nbsp;<span>get value from <b>front</b> of queue</span></div>
+                    <div class="code-line" id="deq-line-6">6. &nbsp;&nbsp;&nbsp;&nbsp;<span>remove value from <b>front</b></span></div>
+                    <div class="code-line" id="deq-line-7">7. &nbsp;&nbsp;&nbsp;&nbsp;<span>update <b>front</b> pointer</span></div>
+                    <div class="code-line" id="deq-line-8">8. &nbsp;&nbsp;&nbsp;&nbsp;<span>return value</span></div>
+                </div>
+                <div id="peek-code" style="display: none;">
+                    <div class="code-line" id="peek-line-1">1. <span><b>Peek():</b></span></div>
+                    <div class="code-line" id="peek-line-2">2. &nbsp;&nbsp;<span>if queue is empty:</span></div>
+                    <div class="code-line" id="peek-line-3">3. &nbsp;&nbsp;&nbsp;&nbsp;<span>report <b>Underflow</b> error</span></div>
+                    <div class="code-line" id="peek-line-4">4. &nbsp;&nbsp;<span>else:</span></div>
+                    <div class="code-line" id="peek-line-5">5. &nbsp;&nbsp;&nbsp;&nbsp;<span>return value from <b>front</b></span></div>
+                </div>
+
+                <div id="get-size-code" style="display: none;">
+                    <div class="code-line" id="size-line-1">1. <span><b>GetSize():</b></span></div>
+                    <div class="code-line" id="size-line-2">2. &nbsp;&nbsp;<span>// ADTs often track size internally</span></div>
+                    <div class="code-line" id="size-line-3">3. &nbsp;&nbsp;<span>return queue.length</span></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // DOM Elements
+            const enqueueValueInput = document.getElementById('enqueue-value');
+            const enqueueBtn = document.getElementById('enqueue-btn');
+            const randomEnqueueBtn = document.getElementById('random-enqueue-btn');
+            const dequeueBtn = document.getElementById('dequeue-btn');
+            const peekBtn = document.getElementById('peek-btn');
+            const getSizeBtn = document.getElementById('get-size-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const speedSlider = document.getElementById('speed-slider');
+            const maxSizeSelect = document.getElementById('max-size-select');
+            
+            const queueContainer = document.getElementById('queue-container');
+            const frontPointer = document.getElementById('front-pointer');
+            const rearPointer = document.getElementById('rear-pointer');
+            
+            const statusMessage = document.getElementById('status-message');
+            const queueArrayStatus = document.getElementById('queue-array-status');
+            
+            const enqueueCode = document.getElementById('enqueue-code');
+            const dequeueCode = document.getElementById('dequeue-code');
+            const peekCode = document.getElementById('peek-code');
+            const getSizeCode = document.getElementById('get-size-code');
+            const allCodeLines = document.querySelectorAll('.code-line');
+
+            let queue = [];
+            let maxSize = parseInt(maxSizeSelect.value, 10);
+            let animationSpeed = 1000;
+            let isAnimating = false;
+
+
+            const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+            const updateSpeed = () => {
+                animationSpeed = 2100 - speedSlider.value; 
+            };
+
+            maxSizeSelect.addEventListener('change', () => {
+                maxSize = parseInt(maxSizeSelect.value, 10);
+                resetQueue();
+            });
+
+            const setStatus = (message, isError = false) => {
+                statusMessage.textContent = message;
+                statusMessage.style.color = isError ? '#d32f2f' : '#333';
+                statusMessage.style.borderColor = isError ? '#f44336' : '#80cbc4';
+                statusMessage.style.background = isError ? '#ffebee' : '#e0f2f1';
+            };
+
+            const updateArrayStatus = () => {
+                const arrayString = `[ ${queue.join(', ')} ]`;
+                queueArrayStatus.textContent = arrayString;
+            };
+
+            const highlightCode = (operation, line) => {
+                clearHighlights();
+                enqueueCode.style.display = 'none';
+                dequeueCode.style.display = 'none';
+                peekCode.style.display = 'none';
+                getSizeCode.style.display = 'none';
+
+                if (operation === 'enqueue') {
+                    enqueueCode.style.display = 'block';
+                    const el = document.getElementById(`enq-line-${line}`);
+                    if (el) el.classList.add('highlight');
+                } else if (operation === 'dequeue') {
+                    dequeueCode.style.display = 'block';
+                    const el = document.getElementById(`deq-line-${line}`);
+                    if (el) el.classList.add('highlight');
+                } else if (operation === 'peek') {
+                    peekCode.style.display = 'block';
+                    const el = document.getElementById(`peek-line-${line}`);
+                    if (el) el.classList.add('highlight');
+                } else if (operation === 'get-size') {
+                    getSizeCode.style.display = 'block';
+                    const el = document.getElementById(`size-line-${line}`);
+                    if (el) el.classList.add('highlight');
+                }
+            };
+
+            const clearHighlights = () => {
+                allCodeLines.forEach(line => line.classList.remove('highlight'));
+            };
+
+            const setControlsDisabled = (disabled) => {
+                isAnimating = disabled;
+                enqueueBtn.disabled = disabled;
+                randomEnqueueBtn.disabled = disabled;
+                dequeueBtn.disabled = disabled;
+                peekBtn.disabled = disabled;
+                getSizeBtn.disabled = disabled;
+                resetBtn.disabled = disabled;
+                maxSizeSelect.disabled = disabled;
+            };
+
+            const renderQueue = () => {
+                queueContainer.querySelectorAll('.queue-item').forEach(item => item.remove());
+
+                queue.forEach(value => {
+                    const item = document.createElement('div');
+                    item.className = 'queue-item';
+                    item.textContent = value;
+                    queueContainer.appendChild(item);
+                });
+
+                if (queue.length === 0) {
+                    frontPointer.style.opacity = '0';
+                    rearPointer.style.opacity = '0';
+                } else {
+                    const frontPosition = 15; 
+                    const rearPosition = 15 + (queue.length - 1) * 75; 
+
+                    frontPointer.style.opacity = '1';
+                    frontPointer.style.left = `${frontPosition}px`;
+
+                    rearPointer.style.opacity = '1';
+                    rearPointer.style.left = `${rearPosition}px`;
+                }
+                
+                updateArrayStatus();
+            };
+
+
+            const handleEnqueue = async (inputValue) => {
+                if (isAnimating) return;
+                
+                const value = (inputValue !== undefined) ? String(inputValue) : enqueueValueInput.value.trim();
+                
+                if (!value) {
+                    setStatus('Please enter a value to enqueue.', true);
+                    return;
+                }
+
+                setControlsDisabled(true);
+                highlightCode('enqueue', 2);
+                setStatus('Checking if queue is full...');
+                await sleep(animationSpeed * 0.7);
+
+                if (queue.length >= maxSize) {
+                    highlightCode('enqueue', 3);
+                    setStatus(`Error: Queue Overflow. Max size is ${maxSize}.`, true);
+                    setControlsDisabled(false);
+                    await sleep(animationSpeed);
+                    clearHighlights();
+                    return;
+                }
+
+                highlightCode('enqueue', 5);
+                setStatus(`Queue is not full. Adding "${value}" to rear...`);
+                
+                const item = document.createElement('div');
+                item.className = 'queue-item new-item'; 
+                item.textContent = value;
+                queueContainer.appendChild(item);
+
+                await sleep(50); 
+                item.classList.remove('new-item'); 
+
+                await sleep(animationSpeed);
+
+                highlightCode('enqueue', 6);
+                queue.push(value);
+                renderQueue(); 
+                
+                queueContainer.scrollLeft = queueContainer.scrollWidth;
+
+                setStatus(`Enqueued "${value}". Ready.`);
+                
+                await sleep(animationSpeed * 0.7);
+
+                clearHighlights();
+                enqueueValueInput.value = ''; 
+                setControlsDisabled(false);
+            };
+            const handleRandomEnqueue = () => {
+                const randomValue = Math.floor(Math.random() * 99) + 1;
+                handleEnqueue(randomValue); 
+            };
+
+            const handleDequeue = async () => {
+                if (isAnimating) return;
+                setControlsDisabled(true);
+                highlightCode('dequeue', 2);
+                setStatus('Checking if queue is empty...');
+                await sleep(animationSpeed * 0.7);
+
+                if (queue.length === 0) {
+                    highlightCode('dequeue', 3);
+                    setStatus('Error: Queue Underflow. Cannot dequeue from empty queue.', true);
+                    setControlsDisabled(false);
+                    await sleep(animationSpeed);
+                    clearHighlights();
+                    return;
+                }
+
+                highlightCode('dequeue', 5);
+                const value = queue[0];
+                setStatus(`Value "${value}" found at front.`);
+                
+                const itemToRemove = queueContainer.querySelector('.queue-item');
+                if (itemToRemove) {
+                    itemToRemove.classList.add('removing-item');
+                }
+                
+                await sleep(animationSpeed);
+                highlightCode('dequeue', 6);
+                queue.shift();
+                renderQueue(); 
+                setStatus(`Dequeued "${value}" from front.`);
+                
+                await sleep(animationSpeed);
+
+                highlightCode('dequeue', 8);
+                setStatus(`Returned "${value}". Queue is ready.`);
+                await sleep(animationSpeed * 0.7);
+
+                clearHighlights();
+                setControlsDisabled(false);
+            };
+
+            const handlePeek = async () => {
+                if (isAnimating) return;
+                setControlsDisabled(true);
+                highlightCode('peek', 2);
+                setStatus('Checking if queue is empty...');
+                await sleep(animationSpeed * 0.7);
+
+                if (queue.length === 0) {
+                    highlightCode('peek', 3);
+                    setStatus('Error: Queue Underflow. Cannot peek at empty queue.', true);
+                    setControlsDisabled(false);
+                    await sleep(animationSpeed);
+                    clearHighlights();
+                    return;
+                }
+                highlightCode('peek', 5);
+                const value = queue[0];
+                const itemToPeek = queueContainer.querySelector('.queue-item');
+                
+                if (itemToPeek) {
+                    itemToPeek.classList.add('peek-item'); 
+                    setStatus(`Peeking at front: Value is "${value}".`);
+                    await sleep(animationSpeed);
+                    itemToPeek.classList.remove('peek-item'); 
+                }
+                
+                await sleep(animationSpeed * 0.7);
+
+                clearHighlights();
+                setStatus(`Front value is "${value}". Ready.`);
+                setControlsDisabled(false);
+            };
+
+            const handleGetSize = async () => {
+                if (isAnimating) return;
+                setControlsDisabled(true);
+                highlightCode('get-size', 1);
+                setStatus('Getting queue size...');
+                await sleep(animationSpeed * 0.7);
+
+                highlightCode('get-size', 3);
+                const size = queue.length;
+                setStatus(`Queue size is ${size}.`);
+                
+                await sleep(animationSpeed);
+
+                clearHighlights();
+                setControlsDisabled(false);
+            };
+            const resetQueue = () => {
+                if (isAnimating) return;
+                queue = [];
+                renderQueue();
+                setStatus('Queue reset. Ready.');
+                clearHighlights();
+                setControlsDisabled(false);
+            };
+
+            enqueueBtn.addEventListener('click', () => handleEnqueue(undefined)); 
+            randomEnqueueBtn.addEventListener('click', handleRandomEnqueue);
+            dequeueBtn.addEventListener('click', handleDequeue);
+            peekBtn.addEventListener('click', handlePeek);
+            getSizeBtn.addEventListener('click', handleGetSize);
+            resetBtn.addEventListener('click', resetQueue);
+            speedSlider.addEventListener('input', updateSpeed);
+            
+            enqueueValueInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    handleEnqueue(undefined);
+                }
+            });
+            updateSpeed();
+            renderQueue();
+            window.addEventListener('resize', renderQueue);
+        });
+    </script>
+</body>
+</html>
