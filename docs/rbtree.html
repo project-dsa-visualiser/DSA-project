@@ -238,12 +238,10 @@
     function layout(n, x, y, w){
       if(!n) return;
       n.x = x; n.y = y;
-      // decreased vertical gap and reduced horizontal spacing between siblings
       const half = Math.max(24, w/3); // use w/3 instead of w/2 to bring siblings closer
       layout(n.left, x - half, y + 36, w/2);
       layout(n.right, x + half, y + 36, w/2);
     }
-    // reduce overall tree width so tree appears smaller
     layout(root, 600, 50, Math.min(1400, sz * 50));
   }
 
@@ -560,4 +558,5 @@
 </body>
 
 </html>
+
 
