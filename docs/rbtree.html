@@ -17,12 +17,10 @@
     background:linear-gradient(180deg,#fbfdff,#f6f8ff);
     border-radius:12px;
     padding:10px;
-    /* larger white area horizontally so user gets more horizontal space */
     max-height: calc(100vh - 160px);
-    max-width:1200px;     /* increased white area width */
-    overflow:auto;       /* both horizontal & vertical scrollbar inside this box */
+    max-width:1200px;
+    overflow:auto;
   }
-  /* svg sized so it can grow with viewport (but still larger than white box to enable scrollbars) */
   svg{ display:block; width:max-content; min-width:1200px; min-height: calc(100vh - 220px); }
   input,select,button{font-size:13px}
   button{
@@ -196,7 +194,6 @@
     g.classList.add('node');
 
     const circle = document.createElementNS('http://www.w3.org/2000/svg','circle');
-    // decreased node radius
     circle.setAttribute('r', 20);
     circle.setAttribute('cx', 0); circle.setAttribute('cy', 0);
     circle.setAttribute('fill', node.isRed() ? '#ffb6b6' : '#111');
@@ -206,7 +203,6 @@
     txt.textContent = node.val;
     txt.setAttribute('x',0); txt.setAttribute('y',0);
     txt.setAttribute('text-anchor','middle'); txt.setAttribute('dominant-baseline','middle');
-    // smaller font inside node
     txt.setAttribute('font-size','16'); txt.setAttribute('font-weight','600');
     txt.setAttribute('fill', node.isRed()? '#5b1d1d' : '#fff');
 
@@ -362,7 +358,6 @@
     }
   }
 
-  // traversal state to support pause/play/resume
   const traversalState = {
     isRunning: false,
     isPaused: false,
@@ -563,4 +558,5 @@
 </script>
 
 </body>
+
 </html>
